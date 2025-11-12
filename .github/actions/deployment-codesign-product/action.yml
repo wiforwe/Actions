@@ -294,8 +294,8 @@ runs:
         # Variables dynamiques
         SRC="${product_path}"
         OUT="${dmg_path}"
-        DMG_NAME="$(basename "${OUT%.dmg}")"
-        VOLNAME="$(basename "${OUT%.dmg}"%.dmg)"
+        DMG_NAME="$(basename "${OUT}")"
+        VOLNAME="$(basename "${OUT%.dmg}")"
         BACKGROUND_PATH="${fond_path}"
 
         echo "Creating DMG '${VOLNAME}' for app '${SRC}'..."
