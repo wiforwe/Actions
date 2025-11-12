@@ -292,29 +292,36 @@ runs:
         export PATH="/opt/homebrew/bin:$PATH"
           
         # Variables dynamiques
-        SRC="${product_path}"
-        OUT="${dmg_path}"
-        DMG_NAME="$(basename "${OUT}")"
-        VOLNAME="$(basename "${OUT%.dmg}")"
+        SRC="${product_path}"                             # Ex: /.../Build/Client/App Client.app
+        OUT="${dmg_path}"                                 # Ex: /.../Build/Client/App Client.dmg
+        DMG_NAME="$(basename "${OUT}")"                   # Ex: App Client.dmg
+        VOLNAME="$(basename "${OUT%.dmg}")"               # Ex: App Client
+        APP_BUNDLE_NAME="$(basename "${SRC}")"            # Ex: App Client.app
         BACKGROUND_PATH="${fond_path}"
 
         echo "Creating DMG '${VOLNAME}' for app '${SRC}'..."
         echo "Background image: ${BACKGROUND_PATH}"
 
-        # Vérifier que l'image existe
         if [ ! -f "$BACKGROUND_PATH" ]; then
           echo "❌ Background image not found at $BACKGROUND_PATH"
           exit 1
         fi
 
-        # Nettoyer tout DMG précédent
         rm -f "${OUT}"
 
-        # Installer create-dmg si nécessaire
         if ! command -v create-dmg &> /dev/null; then
           echo "Installing create-dmg..."
-          brew install create-dmg || true  # Ignorer les erreurs d'installation
+          brew install create-dmg || true
         fi
+        
+        # Vérifie que l'app existe bien
+        if [ ! -d "$SRC" ]; then
+          echo "❌ App bundle not found at $SRC"
+          ls -la "$(dirname "$SRC")"
+          exit 1
+        fi
+
+        echo "✅ Found app bundle: $APP_BUNDLE_NAME"
 
         # Créer le DMG stylé
         create-dmg \
@@ -323,10 +330,10 @@ runs:
           --window-pos 200 120 \
           --window-size 600 400 \
           --icon-size 100 \
-          --icon "${VOLNAME}" 150 200 \
+          --icon "${APP_BUNDLE_NAME}" 150 200 \
           --app-drop-link 450 200 \
           "${OUT}" \
-           "./${VOLNAME}"
+          "${SRC}"
 
         # Vérification du résultat
         if [ -f "${OUT}" ]; then
