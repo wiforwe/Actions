@@ -23,10 +23,9 @@ inputs:
   dmg_path:
     required: true
     type: string
-  dmg_exists:
-    required: false
-    type: boolean
-    default: false
+  fond_path:
+    required: true
+    type: string
 
 outputs:
   product_path: 
@@ -283,9 +282,64 @@ runs:
         product_path: ${{ inputs.product_path }}
         entitlements_path: ${{ steps.setup.outputs.entitlements_path }}
 
+      - name: Create styled DMG with Applications shortcut
+        shell: bash
+        env:
+          product_path: ${{ inputs.product_path }}
+          dmg_path: ${{ steps.setup.outputs.dmg_path }}
+          fond_path: ${{ inputs.fond_path }}
+        run: |
+          export PATH="/opt/homebrew/bin:$PATH"
+          
+          # Variables dynamiques
+          SRC="${product_path}"
+          OUT="${dmg_path}"
+          DMG_NAME="$(basename "${OUT%.dmg}")"
+          VOLNAME="$(basename "${OUT%.dmg}"%.dmg)"
+          BACKGROUND_PATH="${fond_path}"
+
+          echo "Creating DMG '${VOLNAME}' for app '${SRC}'..."
+          echo "Background image: ${BACKGROUND_PATH}"
+
+          # Vérifier que l'image existe
+          if [ ! -f "$BACKGROUND_PATH" ]; then
+            echo "❌ Background image not found at $BACKGROUND_PATH"
+            exit 1
+          fi
+
+          # Nettoyer tout DMG précédent
+          rm -f "${OUT}"
+
+          # Installer create-dmg si nécessaire
+          if ! command -v create-dmg &> /dev/null; then
+            echo "Installing create-dmg..."
+            brew install create-dmg || true  # Ignorer les erreurs d'installation
+          fi
+
+          # Créer le DMG stylé
+          create-dmg \
+            --volname "${VOLNAME}" \
+            --background "${BACKGROUND_PATH}" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "${VOLNAME}" 150 200 \
+            --app-drop-link 450 200 \
+            "${OUT}" \
+            "./${VOLNAME}"
+
+          # Vérification du résultat
+          if [ -f "${OUT}" ]; then
+            echo "✅ DMG successfully created: ${OUT}"
+            ls -lh "${OUT}"
+          else
+            echo "❌ Failed to create DMG"
+            exit 1
+          fi
+
     - name: hdiutil (sparse -> convert)
       id: hdiutil
-      if: ${{ inputs.dmg_exists != 'true' && !contains(inputs.product_path, 'update.mac.4darchive') }}
+      if: ${{ !contains(inputs.product_path, 'update.mac.4darchive') }}
       shell: bash
       env:
         product_path: ${{ inputs.product_path }}
