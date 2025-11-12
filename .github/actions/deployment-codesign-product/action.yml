@@ -283,6 +283,7 @@ runs:
         entitlements_path: ${{ steps.setup.outputs.entitlements_path }}
 
     - name: Create styled DMG with Applications shortcut
+      if: ${{ !contains(inputs.product_path, 'update.mac.4darchive') }}
       shell: bash
       env:
         product_path: ${{ inputs.product_path }}
