@@ -333,6 +333,7 @@ runs:
           --icon-size 100 \
           --icon "${APP_BUNDLE_NAME}" 150 200 \
           --app-drop-link 450 200 \
+          --skip-jenkins \
           "${OUT}" \
           "${SRC}"
 
